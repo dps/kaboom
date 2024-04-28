@@ -13,9 +13,14 @@ import kaboom from "https://unpkg.com/kaboom@3000.0.1/dist/kaboom.mjs";
 
 const k = kaboom({
 	    background: [74, 48, 82],
-    })
+})
 
-const objs = [
+
+
+const startButton = document.getElementById('startButton');
+startButton.addEventListener('click', function() {
+
+    const objs = [
 	"slack",
     "slack2",
     "cal",
@@ -489,11 +494,8 @@ scene("win", ({ time, boss }) => {
 
 })
 
-const startButton = document.getElementById('startButton');
-startButton.addEventListener('click', function() {
-
-
     k.go("battle");
+    startButton.hidden = true;
 });
 
     
