@@ -1,24 +1,24 @@
 
+<script src="https://unpkg.com/kaboom@3000.0.1/dist/kaboom.js"></script>
 
 <center>
-    <button id="startButton" style="position:absolute;left:0;height:400px;width:400px;">START</button>
+    <button id="startButton"
+        style="position:absolute;left:0;height:100%;width:100%;font-family: monospace;font-size: xx-large;">START</button>
 </center>
 
 
 <script type="module">
 
+const startButton = document.getElementById('startButton');
+startButton.addEventListener('click', function() {
+
 // import kaboom lib
-import kaboom from "https://unpkg.com/kaboom@3000.0.1/dist/kaboom.mjs";
+// import kaboom from "https://unpkg.com/kaboom@3000.0.1/dist/kaboom.mjs";
 
 
 const k = kaboom({
 	    background: [74, 48, 82],
 })
-
-
-
-const startButton = document.getElementById('startButton');
-startButton.addEventListener('click', function() {
 
     const objs = [
 	"slack",
