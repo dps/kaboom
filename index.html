@@ -1,0 +1,480 @@
+<script type="module">
+
+// import kaboom lib
+import kaboom from "https://unpkg.com/kaboom@3000.0.1/dist/kaboom.mjs";
+
+kaboom({
+	background: [74, 48, 82],
+})
+
+
+const objs = [
+	"slack",
+    "slack2",
+    "cal",
+    "sandboxes",
+    "wb",
+    "eventd",
+	"bug",
+]
+
+for (const obj of objs) {
+	loadSprite(obj, `/sprites/${obj}.png`)
+}
+
+loadSprite("michelle", "/sprites/michelle.png")
+
+loadSound("portal", "/sounds/portal.mp3")
+loadSound("hit", "/sounds/hit.mp3")
+loadSound("shoot", "/sounds/shoot.mp3")
+loadSound("explode", "/sounds/explode.mp3")
+loadSound("slack", "/sounds/slack.mp3")
+loadSound("cal", "/sounds/cal.mp3")
+
+loadSound("Flow", "/sounds/Flow.mp3")
+
+scene("battle", () => {
+
+    var interBulletDelay = 250;
+    var lastFired = 0;
+    var enemiesSpawned = 0;
+
+	const BULLET_SPEED = 1200
+	const TRASH_SPEED = 120
+	const BOSS_SPEED = 48
+	var PLAYER_SPEED = 480
+	const STAR_SPEED = 120
+	const BOSS_HEALTH = 1000
+	const OBJ_HEALTH = 20
+
+	const bossName = "bug" //choose(objs)
+
+	let insaneMode = false
+
+	const music = play("Flow")
+    music.loop = true
+
+	volume(0.5)
+
+	function grow(rate) {
+		return {
+			update() {
+				const n = rate * dt()
+				this.scale.x += n
+				this.scale.y += n
+			},
+		}
+	}
+
+	function late(t) {
+		let timer = 0
+		return {
+			add() {
+				this.hidden = true
+			},
+			update() {
+				timer += dt()
+				if (timer >= t) {
+					this.hidden = false
+				}
+			},
+		}
+	}
+
+	add([
+		text("CAN YOU", { size: 160 }),
+		pos(width() / 2, height() / 2),
+		anchor("center"),
+		lifespan(1),
+		fixed(),
+	])
+
+	add([
+		text("SQUASH THE BUG WHILE", { size: 80 }),
+		pos(width() / 2, height() / 2),
+		anchor("center"),
+		lifespan(2),
+		late(1),
+		fixed(),
+	])
+
+	add([
+		text("KEEPING YOUR FLOW STATE?", { size: 80 }),
+		pos(width() / 2, height() / 2),
+		anchor("center"),
+		lifespan(4),
+		late(2),
+		fixed(),
+	])
+
+	const sky = add([
+		rect(width(), height()),
+		color(0, 0, 0),
+		opacity(0),
+	])
+
+	sky.onUpdate(() => {
+		if (insaneMode) {
+			const t = time() * 10
+			sky.color.r = wave(127, 255, t)
+			sky.color.g = wave(127, 255, t + 1)
+			sky.color.b = wave(127, 255, t + 2)
+			sky.opacity = 1
+		} else {
+			sky.color = rgb(0, 0, 0)
+			sky.opacity = 0
+		}
+	})
+
+	const player = add([
+		sprite("michelle"),
+		area(),
+		pos(width() / 2, height() - 64),
+		anchor("center"),
+	])
+
+	onKeyDown("left", () => {
+		player.move(-PLAYER_SPEED, 0)
+		if (player.pos.x < 0) {
+			player.pos.x = width()
+		}
+	})
+
+	onKeyDown("right", () => {
+		player.move(PLAYER_SPEED, 0)
+		if (player.pos.x > width()) {
+			player.pos.x = 0
+		}
+	})
+
+	onKeyPress("up", () => {
+		insaneMode = true
+		music.speed = 2
+	})
+
+	onKeyRelease("up", () => {
+		insaneMode = false
+		music.speed = 1
+	})
+
+	player.onCollide("enemy", (e) => {
+		destroy(e)
+		destroy(player)
+		shake(120)
+		play("explode")
+		music.detune = -1200
+		addExplode(center(), 12, 120, 30)
+		wait(1, () => {
+			music.paused = true
+			go("battle")
+		})
+	})
+
+    player.onCollide("tool", (t) => {
+        destroy(t)
+        shake(60)
+        play("portal")
+    })
+
+    player.onCollide("wb", (t) => {
+        interBulletDelay /= 2;
+
+        add([
+            text("Workbench! Moar lasers.", { size: 80 }),
+            pos(width() / 2, height() / 2),
+            anchor("center"),
+            lifespan(1),
+            fixed(),
+	    ])
+    })
+
+    player.onCollide("sandboxes", (t) => {
+        PLAYER_SPEED *= 1.5;
+
+        add([
+            text("Sandbox! Faster moves.", { size: 80 }),
+            pos(width() / 2, height() / 2),
+            anchor("center"),
+            lifespan(1),
+            fixed(),
+	    ])
+    })
+
+    player.onCollide("eventd", (t) => {
+        insaneMode = true;
+        music.speed = 2;
+
+        add([
+            text("Event destinations! Insane mode.", { size: 80 }),
+            pos(width() / 2, height() / 2),
+            anchor("center"),
+            lifespan(1),
+            fixed(),
+	    ])
+    })
+
+
+	function addExplode(p, n, rad, size) {
+		for (let i = 0; i < n; i++) {
+			wait(rand(n * 0.1), () => {
+				for (let i = 0; i < 2; i++) {
+					add([
+						pos(p.add(rand(vec2(-rad), vec2(rad)))),
+						rect(4, 4),
+						scale(1 * size, 1 * size),
+						lifespan(0.1),
+						grow(rand(48, 72) * size),
+						anchor("center"),
+					])
+				}
+			})
+		}
+	}
+
+	function spawnBullet(p) {
+		add([
+			rect(12, 48),
+			area(),
+			pos(p),
+			anchor("center"),
+			color(127, 127, 255),
+			outline(4),
+			move(UP, BULLET_SPEED),
+			offscreen({ destroy: true }),
+			// strings here means a tag
+			"bullet",
+		])
+	}
+
+	onUpdate("bullet", (b) => {
+		//if (insaneMode) {
+			b.color = rand(rgb(0, 0, 0), rgb(255, 255, 255))
+		//}
+	})
+
+	onKeyDown("space", () => {
+        var millis = Date.now();
+        if ((lastFired + interBulletDelay) < millis) {
+            spawnBullet(player.pos.sub(20, 0))
+            spawnBullet(player.pos.add(20, 0))
+            play("shoot", {
+                volume: 0.3,
+                detune: rand(-1200, 1200),
+            })
+            lastFired = millis;
+        }
+	})
+
+	function spawnTrash() {
+		const name = choose(objs.filter(n => n != bossName))
+
+        var type = "enemy";
+        if (name === "wb" || name === "sandboxes" || name === "eventd") {
+            type = "tool";
+        }
+
+        if (type == "enemy") {
+            enemiesSpawned += 1
+        }
+
+        if (!(enemiesSpawned < 6 && type === "tool")) {
+            if (name === "cal") {
+                play("cal")
+            } else {
+                play("slack")
+            }
+            add([
+                sprite(name),
+                area(),
+                pos(rand(0, width()), 0),
+                health(parseInt(rand(1, OBJ_HEALTH))),
+                anchor("bot"),
+                "trash",
+                type,
+                name,
+                { speed: rand(TRASH_SPEED * 0.5, TRASH_SPEED * 1.5) },
+		    ])
+        }
+
+		wait(insaneMode ? 1 : 3, spawnTrash)
+	}
+
+	const boss = add([
+		sprite(bossName),
+		area(),
+		pos(width() / 2, 40),
+		health(BOSS_HEALTH),
+		scale(3),
+		anchor("top"),
+		"enemy",
+		{
+			dir: 1,
+		},
+	])
+
+	on("death", "enemy", (e) => {
+		destroy(e)
+		shake(2)
+		addKaboom(e.pos)
+	})
+
+    on("death", "tool", (t) => {
+		destroy(t)
+		shake(2)
+		addKaboom(t.pos)
+	})
+
+	on("hurt", "enemy", (e) => {
+		shake(1)
+		play("hit", {
+			detune: rand(-1200, 1200),
+			speed: rand(0.2, 2),
+		})
+        const t = time() * 100
+        var r = wave(127, 255, t)
+        var g = wave(127, 255, t + 1)
+        var b = wave(127, 255, t + 2)
+
+        add([
+            text(e.hp(), { size: 64 }),
+            color(r,g,b),
+            pos(e.pos.x - e.width / 2, e.pos.y),
+            anchor("left"),
+            lifespan(interBulletDelay/2000),
+            fixed(),
+        ])
+
+	})
+
+    on("hurt", "tool", (e) => {
+		shake(1)
+		play("hit", {
+			detune: rand(-1200, 1200),
+			speed: rand(0.2, 2),
+		})
+        add([
+            text(e.hp(), { size: 64 }),
+            pos(e.pos.x, e.pos.y),
+            anchor("center"),
+            lifespan(interBulletDelay/1000),
+            fixed(),
+        ])
+	})
+
+	const timer = add([
+		text(0),
+		pos(12, 32),
+		fixed(),
+		{ time: 0 },
+	])
+
+	timer.onUpdate(() => {
+		timer.time += dt()
+		timer.text = timer.time.toFixed(2)
+	})
+
+	onCollide("bullet", "enemy", (b, e) => {
+		destroy(b)
+		e.hurt(insaneMode ? 10 : 1)
+		addExplode(b.pos, 1, 24, 1)
+	})
+
+    onCollide("bullet", "tool", (b, e) => {
+		destroy(b)
+		e.hurt(insaneMode ? 10 : 1)
+		addExplode(b.pos, 1, 24, 1)
+	})
+
+	onUpdate("trash", (t) => {
+		t.move(0, t.speed * (insaneMode ? 5 : 1))
+		if (t.pos.y - t.height > height()) {
+			destroy(t)
+		}
+	})
+
+    onUpdate("enemy", (e) => {
+		if (e.pos.y + e.height > height()) {
+            destroy(e)
+            destroy(player)
+            shake(120)
+            play("explode")
+            music.detune = -1200
+            addExplode(center(), 12, 120, 30)
+            wait(1, () => {
+                music.paused = true
+                go("battle")
+            })
+		}
+	})
+
+	boss.onUpdate((p) => {
+		boss.move(BOSS_SPEED * boss.dir * (insaneMode ? 3 : 1), 0)
+		if (boss.dir === 1 && boss.pos.x >= width() - 20) {
+			boss.dir = -1
+		}
+		if (boss.dir === -1 && boss.pos.x <= 20) {
+			boss.dir = 1
+		}
+	})
+
+	boss.onHurt(() => {
+		healthbar.set(boss.hp())
+	})
+
+	boss.onDeath(() => {
+		//music.stop()
+		go("win", {
+			time: timer.time,
+			boss: bossName,
+		})
+	})
+
+	const healthbar = add([
+		rect(width(), 24),
+		pos(0, 0),
+		color(107, 201, 108),
+		fixed(),
+		{
+			max: BOSS_HEALTH,
+			set(hp) {
+				this.width = width() * hp / this.max
+				this.flash = true
+			},
+		},
+	])
+
+	healthbar.onUpdate(() => {
+		if (healthbar.flash) {
+			healthbar.color = rgb(255, 255, 255)
+			healthbar.flash = false
+		} else {
+			healthbar.color = rgb(127, 255, 127)
+		}
+	})
+
+	spawnTrash()
+
+})
+
+scene("win", ({ time, boss }) => {
+
+
+	add([
+		sprite(boss),
+		color(255, 0, 0),
+		anchor("center"),
+		scale(8),
+		pos(width() / 2, height() / 2),
+	])
+
+	add([
+		text(time.toFixed(2), 24),
+		anchor("center"),
+		pos(width() / 2, height() / 2),
+	])
+
+})
+
+go("battle")
+    
+</script>
