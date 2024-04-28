@@ -1,12 +1,19 @@
+
+
+<center>
+    <button id="startButton" style="position:absolute;left:0;height:400px;width:400px;">START</button>
+</center>
+
+
 <script type="module">
 
 // import kaboom lib
 import kaboom from "https://unpkg.com/kaboom@3000.0.1/dist/kaboom.mjs";
 
-kaboom({
-	background: [74, 48, 82],
-})
 
+const k = kaboom({
+	    background: [74, 48, 82],
+    })
 
 const objs = [
 	"slack",
@@ -23,6 +30,8 @@ for (const obj of objs) {
 }
 
 loadSprite("michelle", "/sprites/michelle.png")
+loadSprite("scene", "/sprites/scene.png")
+
 
 loadSound("portal", "/sounds/portal.mp3")
 loadSound("hit", "/sounds/hit.mp3")
@@ -44,7 +53,7 @@ scene("battle", () => {
 	const BOSS_SPEED = 48
 	var PLAYER_SPEED = 480
 	const STAR_SPEED = 120
-	const BOSS_HEALTH = 1000
+	const BOSS_HEALTH = 10//1000
 	const OBJ_HEALTH = 20
 
 	const bossName = "bug" //choose(objs)
@@ -460,21 +469,32 @@ scene("win", ({ time, boss }) => {
 
 
 	add([
-		sprite(boss),
-		color(255, 0, 0),
+		sprite("scene"),
 		anchor("center"),
-		scale(8),
+		scale(1),
 		pos(width() / 2, height() / 2),
 	])
 
 	add([
 		text(time.toFixed(2), 24),
 		anchor("center"),
-		pos(width() / 2, height() / 2),
+		pos(width() / 2, 100),
+	])
+
+    add([
+		text("Thank you for your work on the dev keynote!", 48),
+		anchor("center"),
+		pos(width() / 2, 40),
 	])
 
 })
 
-go("battle")
+const startButton = document.getElementById('startButton');
+startButton.addEventListener('click', function() {
+
+
+    k.go("battle");
+});
+
     
 </script>
