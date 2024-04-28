@@ -3,11 +3,35 @@
 
 <center>
     <button id="startButton"
-        style="position:absolute;left:0;height:100%;width:100%;font-family: monospace;font-size: xx-large;">START</button>
+        style="position:absolute;left:0;height:100%;width:100%;font-family: monospace;font-size: 100pt;">START</button>
 </center>
 
+<script>
+    function initAudio(){
+        var audio = new Audio('/sounds/portal.mp3');
+        var self = this;
+        //not sure if you need this, but it's better to be safe
+        self.audio = audio;
+        var startAudio = function(){
+                            self.audio.play();
+                            document.removeEventListener("touchstart", self.startAudio, false);
+                        }
+        self.startAudio = startAudio;
+
+        var pauseAudio = function(){
+                            self.audio.pause();
+                            self.audio.removeEventListener("play", self.pauseAudio, false);
+                        }
+        self.pauseAudio = pauseAudio;
+
+        document.addEventListener("touchstart", self.startAudio, false);
+        self.audio.addEventListener("play", self.pauseAudio, false);
+}
+initAudio();
+</script>
 
 <script type="module">
+let audioCtx;
 
 const startButton = document.getElementById('startButton');
 startButton.addEventListener('click', function() {
@@ -67,6 +91,8 @@ scene("battle", () => {
 
 	const music = play("flow")
     music.loop = true
+
+    var touchDownX = 0
 
 	volume(0.5)
 
@@ -278,6 +304,39 @@ scene("battle", () => {
             lastFired = millis;
         }
 	})
+
+    const touching = () => {
+        var millis = Date.now();
+        if ((lastFired + interBulletDelay) < millis) {
+            spawnBullet(player.pos.sub(20, 0))
+            spawnBullet(player.pos.add(20, 0))
+            play("shoot", {
+                volume: 0.3,
+                detune: rand(-1200, 1200),
+            })
+            lastFired = millis;
+        }
+    }
+    onTouchStart((pos, t) => {
+
+        touchDownX = pos.x;
+        touching();
+    })
+
+    onTouchMove((pos, t) => {
+        if (pos.x < player.pos.x) {
+            player.move(-PLAYER_SPEED, 0)
+            if (player.pos.x < 0) {
+                player.pos.x = width()
+            }
+        }
+        if (pos.x > player.pos.x) {
+            player.move(PLAYER_SPEED, 0)
+            if (player.pos.x > width()) {
+                player.pos.x = 0
+            }
+        }
+    })
 
 	function spawnTrash() {
 		const name = choose(objs.filter(n => n != bossName))
