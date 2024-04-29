@@ -1,10 +1,9 @@
-
+<html>
+    <head><title>Thank you!</title></head>
 <script src="https://unpkg.com/kaboom@3000.0.1/dist/kaboom.js"></script>
 
-<center>
     <button id="startButton"
         style="position:absolute;left:0;height:100%;width:100%;font-family: monospace;font-size: 100pt;">START</button>
-</center>
 
 <script>
     function initAudio(){
@@ -44,7 +43,7 @@ const k = kaboom({
 	    background: [74, 48, 82],
 })
 
-    const objs = [
+const objs = [
 	"slack",
     "slack2",
     "cal",
@@ -54,11 +53,20 @@ const k = kaboom({
 	"bug",
 ]
 
+const players = [
+    "michelle",
+    "mg",
+    "nilofer"
+]
+
 for (const obj of objs) {
 	loadSprite(obj, `/sprites/${obj}.png`)
 }
 
-loadSprite("michelle", "/sprites/michelle.png")
+loadSprite("michelle", "/sprites/Pixel-Michelle.png")
+loadSprite("mg", "/sprites/Pixel-MG.png")
+loadSprite("nilofer", "/sprites/Pixel-Nilofer.png")
+
 loadSprite("scene", "/sprites/scene.png")
 
 
@@ -70,6 +78,8 @@ loadSound("slack", "/sounds/slack.mp3")
 loadSound("cal", "/sounds/cal.mp3")
 
 loadSound("flow", "/sounds/flow.mp3")
+
+loadShaderURL("crt", null, "/shaders/crt.frag")
 
 scene("battle", () => {
 
@@ -86,6 +96,7 @@ scene("battle", () => {
 	const OBJ_HEALTH = 20
 
 	const bossName = "bug" //choose(objs)
+    const playerName = choose(players)
 
 	let insaneMode = false
 
@@ -167,7 +178,8 @@ scene("battle", () => {
 	})
 
 	const player = add([
-		sprite("michelle"),
+		sprite(playerName),
+        scale(0.25),
 		area(),
 		pos(width() / 2, height() - 64),
 		anchor("center"),
@@ -295,8 +307,8 @@ scene("battle", () => {
 	onKeyDown("space", () => {
         var millis = Date.now();
         if ((lastFired + interBulletDelay) < millis) {
-            spawnBullet(player.pos.sub(20, 0))
-            spawnBullet(player.pos.add(20, 0))
+            spawnBullet(player.pos.sub(40, 20))
+            spawnBullet(player.pos.add(20, -20))
             play("shoot", {
                 volume: 0.3,
                 detune: rand(-1200, 1200),
@@ -416,7 +428,7 @@ scene("battle", () => {
             pos(e.pos.x - e.width / 2, e.pos.y),
             anchor("left"),
             lifespan(interBulletDelay/5000),
-            fixed(),
+            //fixed(),
         ])
 
 	})
@@ -529,6 +541,10 @@ scene("battle", () => {
 
 	spawnTrash()
 
+    onUpdate(() => {
+        usePostEffect("crt", {"u_flatness": 4})
+    })
+
 })
 
 scene("win", ({ time, boss }) => {
@@ -561,3 +577,5 @@ scene("win", ({ time, boss }) => {
 
     
 </script>
+
+</html>
