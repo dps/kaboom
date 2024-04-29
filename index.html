@@ -353,13 +353,15 @@ scene("battle", () => {
         if (!(enemiesSpawned < 6 && type === "tool")) {
             if (name === "cal") {
                 play("cal")
-            } else {
+            } else if (name.startsWith("slack")) {
                 play("slack")
+            } else {
+                play("portal")
             }
             add([
                 sprite(name),
                 area(),
-                pos(rand(0, width()), 0),
+                pos(rand(160, width()), 0),
                 health(parseInt(rand(1, OBJ_HEALTH))),
                 anchor("bot"),
                 "trash",
@@ -413,7 +415,7 @@ scene("battle", () => {
             color(r,g,b),
             pos(e.pos.x - e.width / 2, e.pos.y),
             anchor("left"),
-            lifespan(interBulletDelay/2000),
+            lifespan(interBulletDelay/5000),
             fixed(),
         ])
 
